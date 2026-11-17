@@ -1,0 +1,43 @@
+webapp:
+  enabled: true
+  host: "0.0.0.0" # needed to accept requests to tailnet IPs
+  port: 9120
+  # Use http://<machine>.<tailnet>:<port> replacing with your values
+  # Set TAILNET_ID in Hermes' .env, e.g.:
+  # `hermes config set TAILNET_ID <value>`
+  public_url: http://hermes-tailscale.${TAILNET_ID}.ts.net:9120 # OIDC callback
+model:
+  default: 'Tiel'
+  provider: llama-cpp
+  base_url: http://inference:8080/v1
+  api_mode: chat_completions
+telemetry:
+  shared_metrics:
+    enabled: false
+    send: false
+    offer_version: 2
+providers:
+  llama-cpp:
+    name: llama.cpp
+    base_url: http://inference:8080/v1
+    model: Tiel
+    discover_models: true
+    models:
+      Tiel:
+        context_length: 100000
+    context_length: 100000
+  cloudflare:
+    name: Cloudflare
+    # Add CLOUDFLARE_ID to Hermes' .env, e.g.:
+    # `hermes config set CLOUDFLARE_ID <value>`
+    base_url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ID}/ai/v1
+    model: '@cf/google/gemma-4-26b-a4b-it'
+    discover_models: true
+    models:
+      '@cf/google/gemma-4-26b-a4b-it':
+        context_length: 256000
+    key_env: HERMES_CUSTOM_CLOUDFLARE_API_KEY
+    context_length: 256000
+_config_version: 54
+gateway:
+  multiplex_profiles: true

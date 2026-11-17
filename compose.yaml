@@ -1,0 +1,66 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.104.7
+    container_name: hermes-tailscale
+    hostname: hermes-tailscale # tailnet machine name
+    environment:
+      - TS_AUTHKEY=${TAILSCALE_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+    # Uncomment to expose hermes-web to the Docker host and LAN
+    # Needed here because hermes-web is in service mode networking
+    # ports:
+    #   - "9120:9120"
+    volumes:
+      - ./runtime/tailscale-state:/var/lib/tailscale
+    cap_add:
+      - net_admin
+      - net_raw
+    networks:
+      - hermes-stack
+    restart: unless-stopped
+  inference:
+    # server-vulkan defaults to 0.0.0.0:8080
+    image: ghcr.io/ggml-org/llama.cpp:server-vulkan-v1.0.0-b12359-b1b770d
+    container_name: hermes-inference
+    entrypoint:
+      - /app/llama-server
+    # Specifying LLAMA_ARG_MODELS_PRESET with the server-vulkan image fails
+    # Using LLAMA_ARG_MODELS_PRESET no models are found
+    # Using --models-preset works
+    command:
+      - --models-preset
+      - /models/models.ini
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - ./runtime/models:/models:ro
+    networks:
+      - hermes-stack
+    restart: unless-stopped
+  hermes-web:
+    image: nousresearch/hermes-agent:v0.23.2
+    container_name: hermes-web
+    command: ["gateway", "run"]
+    restart: unless-stopped
+    depends_on:
+      - inference
+      - tailscale
+    volumes:
+      - ./runtime/hermes-home:/opt/data
+    environment:
+      # Run Hermes as the standard non-root user for easy host directory access
+      - HERMES_UID=1000
+      - HERMES_GID=1000
+      # Auth required for broadcast availability
+      - HERMES_DASHBOARD_BASIC_AUTH_USERNAME=${DASHBOARD_USERNAME}
+      - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${DASHBOARD_PASSWORD}
+    # Needed for tailscale. Upstream documentation example is misleading
+    network_mode: service:tailscale
+networks:
+  hermes-stack:
+    driver: bridge
+    ipam:
+      config:
+        # TODO: Verify
+        # Must match dashboard.trusted_proxies in Hermes' config.yaml
+        - subnet: 172.28.0.0/16

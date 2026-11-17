@@ -1,0 +1,9 @@
+runtime/hermes-home/**
+!runtime/hermes-home/config.yaml
+
+runtime/models/**
+!runtime/models/models.ini
+
+runtime/tailscale-state/
+
+*.env*
