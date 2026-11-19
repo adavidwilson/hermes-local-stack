@@ -5,9 +5,10 @@ webapp:
   # Use http://<machine>.<tailnet>:<port> replacing with your values
   # Set TAILNET_ID in Hermes' .env, e.g.:
   # `hermes config set TAILNET_ID <value>`
-  public_url: http://hermes-tailscale.${TAILNET_ID}.ts.net:9120 # OIDC callback
+  # Only needed for OIDC auth or specifying https
+  # public_url: http://hermes-tailscale.${TAILNET_ID}.ts.net:9120
 model:
-  default: 'Tiel'
+  default: 'Qwen-3.6-3.8-Distill'
   provider: llama-cpp
   base_url: http://inference:8080/v1
   api_mode: chat_completions
@@ -20,10 +21,12 @@ providers:
   llama-cpp:
     name: llama.cpp
     base_url: http://inference:8080/v1
-    model: Tiel
+    model: Qwen-3.6-3.8-Distill
     discover_models: true
     models:
       Tiel:
+        context_length: 100000
+      Qwen-3.6-3.8-Distill:
         context_length: 100000
     context_length: 100000
   cloudflare:
@@ -41,3 +44,8 @@ providers:
 _config_version: 54
 gateway:
   multiplex_profiles: true
+sessions:
+  auto_archive: true
+display:
+  in_app_tours: true
+timezone: America/New_York

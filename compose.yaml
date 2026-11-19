@@ -58,9 +58,3 @@ services:
     network_mode: service:tailscale
 networks:
   hermes-stack:
-    driver: bridge
-    ipam:
-      config:
-        # TODO: Verify
-        # Must match dashboard.trusted_proxies in Hermes' config.yaml
-        - subnet: 172.28.0.0/16
