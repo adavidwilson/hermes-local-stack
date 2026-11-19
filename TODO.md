@@ -1,5 +1,11 @@
 # TODO
 
+## Troubleshooting
+
+- Keep awake doesn't work
+- No %-full in the status bar
+- No notifications or other features (probably browser-limited http)
+
 ## Learning
 
 - What is Settings -> Advanced -> Agent limits -> Service Tier?
