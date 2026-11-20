@@ -24,6 +24,8 @@ services:
     container_name: hermes-inference
     entrypoint:
       - /app/llama-server
+    environment:
+      - LLAMA_ARG_MODELS_MAX=1
     # Specifying LLAMA_ARG_MODELS_PRESET with the server-vulkan image fails
     # Using LLAMA_ARG_MODELS_PRESET no models are found
     # Using --models-preset works
