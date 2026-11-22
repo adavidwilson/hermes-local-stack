@@ -107,3 +107,5 @@ skills:
   disabled: []
 stt:
   enabled: false
+agent:
+  clarify_timeout: -1

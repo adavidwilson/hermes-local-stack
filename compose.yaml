@@ -40,7 +40,7 @@ services:
       - hermes-stack
     restart: unless-stopped
   hermes-web:
-    image: nousresearch/hermes-agent:v0.23.2
+    image: nousresearch/hermes-agent:v0.23.3
     container_name: hermes-web
     command: ["gateway", "run"]
     restart: unless-stopped
