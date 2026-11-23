@@ -63,7 +63,7 @@ services:
   hindsight:
     # Hindsight memory provider (local_external for Hermes), sharing the llama.cpp `inference` service.
     # No ports are published to the host; reachable only over the internal hermes-stack network.
-    image: ghcr.io/vectorize-io/hindsight:v1.2.3
+    image: ghcr.io/vectorize-io/hindsight:1.2.3
     container_name: hermes-hindsight
     restart: unless-stopped
     stop_grace_period: 75s # ~60s for Hindsight to drain tasks on stop
