@@ -49,6 +49,7 @@ services:
       - tailscale
     volumes:
       - ./runtime/hermes-home:/opt/data
+      - ./ssh_config:/root/.ssh/config
     environment:
       # Run Hermes as the standard non-root user for easy host directory access
       - HERMES_UID=1000

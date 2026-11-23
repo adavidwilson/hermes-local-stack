@@ -4,9 +4,78 @@ A Docker Compose stack that runs a **local-only** Hermes instance and serves its
 (Hermes Desktop in a browser) over **Tailscale**, with **local** inference on the host GPU
 via **llama.cpp (Vulkan)**. Cloudflare Workers AI free tier is configured if desired as a fallback.
 
+## Browser Automation
+
+1. On the client, create a key: `ssh-keygen -t ed25519 -f /opt/data/home/.ssh/chromecdp_ed25519 -C chromecdp`
+2. On the server, create the account and key file:
+
+```bash
+sudo useradd --create-home --shell /usr/sbin/nologin chromecdp
+sudo install -d -o chromecdp -g chromecdp -m 700 /home/chromecdp/.ssh
+sudoedit /home/chromecdp/.ssh/authorized_keys
+```
+
+3. On the client, run `cat ~/.ssh/chromecdp_ed25519.pub`. Paste its output into the server’s `authorized_keys`, prefixed with:
+
+```bash
+restrict,port-forwarding,permitopen="127.0.0.1:9222"
+```
+
+4. Then on the server:
+
+```bash
+sudo chown chromecdp:chromecdp /home/chromecdp/.ssh/authorized_keys
+sudo chmod 600 /home/chromecdp/.ssh/authorized_keys
+```
+
+5. On the server, add to `/etc/ssh/sshd_config`:
+
+```bash
+Match User chromecdp
+   PubkeyAuthentication yes
+   PasswordAuthentication no
+   KbdInteractiveAuthentication no
+   AllowTcpForwarding local
+   PermitOpen 127.0.0.1:9222
+   AllowAgentForwarding no
+   X11Forwarding no
+   PermitTTY no
+   PermitTunnel no
+   MaxSessions 0
+```
+
+6. Validate and reload SSH on the server:
+
+```bash
+sudo sshd -t
+sudo systemctl reload ssh
+```
+
+7. Add an ssh configuration named `ssh_config` to the repo:
+
+```bash
+Host <machine>
+	Hostname <machine>.<tailnet>.ts.net
+	User chromecdp
+	IdentityFile /opt/data/home/.ssh/chromecdp_ed25519
+	SessionType none
+	ExitOnForwardFailure yes
+	ConnectTimeout 5
+	LocalForward 9222 127.0.0.1:9222
+```
+
+**Note:** The compose file is already set to bind mount this to the correct
+directory. The file must be owned by root: `chown root:root ssh_config`.
+
+8. Start the tunnel on the client: `ssh <machine>`
+
+**Note:** Add necessary firewall rules if needed for SSH on the host.
+
+9. Run the browser on the host: `./brave.sh`
+
 ## Topology
 
-```
+```text
 device ──Tailscale──▶ hermes-tailscale (container)
                          │  http://127.0.0.1:9120
                          ▼

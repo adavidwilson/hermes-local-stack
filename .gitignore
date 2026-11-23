@@ -7,3 +7,5 @@ runtime/models/**
 runtime/tailscale-state/
 
 *.env*
+
+Browser-Profile/
