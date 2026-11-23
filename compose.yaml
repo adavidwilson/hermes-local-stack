@@ -47,6 +47,7 @@ services:
     depends_on:
       - inference
       - tailscale
+      - hindsight
     volumes:
       - ./runtime/hermes-home:/opt/data
       - ./ssh_config:/root/.ssh/config
@@ -59,5 +60,28 @@ services:
       - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${DASHBOARD_PASSWORD}
     # Needed for tailscale. Upstream documentation example is misleading
     network_mode: service:tailscale
+  hindsight:
+    # Hindsight memory provider (local_external for Hermes), sharing the llama.cpp `inference` service.
+    # No ports are published to the host; reachable only over the internal hermes-stack network.
+    image: ghcr.io/vectorize-io/hindsight:v1.2.3
+    container_name: hermes-hindsight
+    restart: unless-stopped
+    stop_grace_period: 75s # ~60s for Hindsight to drain tasks on stop
+    shm_size: 1g
+    depends_on:
+      - inference
+    networks:
+      - hermes-stack
+    environment:
+      # Point Hindsight at the shared llama.cpp server (OpenAI-compatible).
+      - HINDSIGHT_API_LLM_PROVIDER=openai
+      - HINDSIGHT_API_LLM_BASE_URL=http://inference:8080/v1
+      - HINDSIGHT_API_LLM_MODEL=Ornith1.5-General # served stem; omit to query /v1/models
+      - HINDSIGHT_API_LLM_MAX_CONCURRENT=2 # don't starve Hermes off the shared llama.cpp
+      - HINDSIGHT_API_WORKER_ID=hermes-hindsight
+    volumes:
+      - hindsight-data:/home/hindsight/.pg0
+volumes:
+  hindsight-data:
 networks:
   hermes-stack:

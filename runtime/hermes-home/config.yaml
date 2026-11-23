@@ -7,6 +7,8 @@ webapp:
   # `hermes config set TAILNET_ID <value>`
   # Only needed for OIDC auth or specifying https
   # public_url: http://hermes-tailscale.${TAILNET_ID}.ts.net:9120
+memory:
+  provider: hindsight
 model:
   default: 'Ornith1.5-Benchmark'
   provider: llama-cpp
@@ -102,6 +104,7 @@ plugins:
   enabled:
     - disk-cleanup
     - security-guidance
+    - hindsight
   disabled: []
 skills:
   disabled: []
