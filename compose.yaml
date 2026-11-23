@@ -80,8 +80,6 @@ services:
       - HINDSIGHT_API_LLM_MAX_CONCURRENT=2 # don't starve Hermes off the shared llama.cpp
       - HINDSIGHT_API_WORKER_ID=hermes-hindsight
     volumes:
-      - hindsight-data:/home/hindsight/.pg0
-volumes:
-  hindsight-data:
+      - ./runtime/hindsight-data:/home/hindsight/.pg0
 networks:
   hermes-stack:

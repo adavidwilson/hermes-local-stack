@@ -5,6 +5,7 @@ runtime/models/**
 !runtime/models/models.ini
 
 runtime/tailscale-state/
+runtime/hindsight-data/
 
 *.env*
 
