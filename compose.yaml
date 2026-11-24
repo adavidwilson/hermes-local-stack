@@ -24,12 +24,13 @@ services:
     container_name: hermes-inference
     entrypoint:
       - /app/llama-server
-    environment:
-      - LLAMA_ARG_MODELS_MAX=1
     # Specifying LLAMA_ARG_MODELS_PRESET with the server-vulkan image fails
     # Using LLAMA_ARG_MODELS_PRESET no models are found
     # Using --models-preset works
     command:
+      - --api-key
+      - ${LLAMA_API_KEY}
+      - --no-webui
       - --models-preset
       - /models/models.ini
     devices:
@@ -57,6 +58,7 @@ services:
       # Auth required for broadcast availability
       - HERMES_DASHBOARD_BASIC_AUTH_USERNAME=${DASHBOARD_USERNAME}
       - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${DASHBOARD_PASSWORD}
+      - LLAMA_API_KEY=${LLAMA_API_KEY}
     # Needed for tailscale. Upstream documentation example is misleading
     network_mode: service:tailscale
 networks:

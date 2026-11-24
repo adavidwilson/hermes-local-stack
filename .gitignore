@@ -9,3 +9,5 @@ runtime/tailscale-state/
 *.env*
 
 Browser-Profile/
+
+ssh_config
