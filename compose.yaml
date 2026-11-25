@@ -17,6 +17,18 @@ services:
       - net_raw
     networks:
       - hermes-stack
+    # `tailscale status` exits 0 once the machine is authenticated/connected.
+    healthcheck:
+      test: ["CMD", "tailscale", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
     restart: unless-stopped
   inference:
     # server-vulkan defaults to 0.0.0.0:8080
@@ -39,6 +51,22 @@ services:
       - ./runtime/models:/models:ro
     networks:
       - hermes-stack
+    # TCP check: the server binds :8080 before the model finishes loading, which is
+    # enough for readiness. start_period covers the slow RDNA1 model load.
+    healthcheck:
+      # The image already ships CMD [curl -f localhost:8080/health]; reuse it and only retune
+      # timing. /health is public (no API key) and returns 200 only once the model is loaded,
+      # so this tells "up" from "ready" across the slow RDNA1 load.
+      test: ["CMD", "curl", "-f", "localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
     restart: unless-stopped
   hermes-web:
     image: nousresearch/hermes-agent:v0.23.3
@@ -46,11 +74,25 @@ services:
     command: ["gateway", "run"]
     restart: unless-stopped
     depends_on:
-      - inference
-      - tailscale
+      inference:
+        condition: service_healthy
+      tailscale:
+        condition: service_healthy
     volumes:
       - ./runtime/hermes-home:/opt/data
       - ./ssh_config:/root/.ssh/config
+    # Gateway API server's public /health (no auth). Requires the API server enabled on :8642.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS --max-time 3 http://127.0.0.1:8642/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
     environment:
       # Run Hermes as the standard non-root user for easy host directory access
       - HERMES_UID=1000

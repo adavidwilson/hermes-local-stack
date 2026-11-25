@@ -126,14 +126,27 @@ created as UID 1000 via `HERMES_UID`; `chown` on the host if your user differs.
 Copy the tracked files into a project dir on the host (e.g. `~/hermes-local-stack/`), keeping the
 structure including `runtime/`.
 
+### 1b. Prepare runtime directories
+
+Docker creates missing bind-mount sources as root-owned directories, which the non-root Hermes user
+(and the SSH-config mount) can't use. Run this once before `docker compose up` (needs root / sudo,
+since two items must be root-owned):
+
+```bash
+sudo bash scripts/prestart.sh
+```
+
+It creates `runtime/hermes-home`, `runtime/tailscale-state`, and an empty `ssh_config`, then chowns
+`runtime/hermes-home` to `HERMES_UID`/`HERMES_GID` (default 1000) and `runtime/tailscale-state` +
+`ssh_config` to `root:root` (Tailscale keys and the CDP SSH tunnel config are security-sensitive).
+
 ### 2. Secrets
 
 ```bash
 cp env.example .env
 ```
 
-Set `DASHBOARD_USERNAME`/`DASHBOARD_PASSWORD` (strong, e.g. `openssl rand -hex 16`) and
-`TAILSCALE_AUTHKEY`.
+Set `DASHBOARD_USERNAME`/`DASHBOARD_PASSWORD` (strong, e.g. `openssl rand -hex 16`), `TAILSCALE_AUTHKEY`, and `LLAMA_API_KEY`.
 
 ### 3. Model weights
 
@@ -196,7 +209,8 @@ rsync -a runtime/hermes-home/ runtime/hermes-home-backup-$(date +%Y%m%d%H%M%S)/
 docker compose -f compose.yaml config >/dev/null && echo CONFIG_OK
 ```
 
-- **Up:** `docker compose ps` → `hermes-web` and `inference` `Up`.
+- **Up:** `docker compose ps` → `hermes-web` and `inference` `Up` (and `Healthy` once the
+  healthchecks pass — inference needs a minute to load the model on RDNA1).
 - **Inference internal only:** `docker compose exec hermes-web curl http://inference:8080/v1/models`
   succeeds; host `curl http://127.0.0.1:8080/v1/models` fails (expected — no published ports).
 
