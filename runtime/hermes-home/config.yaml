@@ -18,7 +18,10 @@ display:
   in_app_tips: false
 model:
   default: Tiel-Coding
-  provider: custom:llama-cpp
+  provider: llama-cpp
+  base_url: http://inference:8080/v1
+  api_mode: chat_completions
+  key_env: LLAMA_API_KEY
 providers:
   llama-cpp:
     name: llama.cpp
@@ -26,10 +29,13 @@ providers:
     model: Tiel-Coding
     discover_models: true
     models:
-      Tiel-Coding: {}
-      Tiel-Default: {}
+      Tiel-Coding:
+        context_length: 262144
+      Tiel-Default:
+        context_length: 262144
     key_env: LLAMA_API_KEY
     default_model: Tiel-Coding
+    context_length: 262144
 agent:
   reasoning_effort: medium
   max_turns: 150
