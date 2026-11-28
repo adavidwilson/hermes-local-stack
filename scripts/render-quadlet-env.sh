@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 # Render the per-service environment files consumed by the Quadlet units.
 #
-# Compose reads .env for interpolation and injects only the variables each
-# service lists. A shared systemd EnvironmentFile cannot do that: it would put
-# every secret into every container. This script writes one file per service,
-# with only the keys that service needs, and records the host UID/GID that
-# keep-id requires.
+# A shared systemd EnvironmentFile would put every secret into every container,
+# so this script writes one file per service with only the keys that service
+# needs, and records the host UID/GID that keep-id requires.
 #
 # Usage: scripts/render-quadlet-env.sh [--env-file .env] [--out-dir DIR]
 set -euo pipefail
@@ -28,9 +26,8 @@ die() { printf 'render-quadlet-env: %s\n' "$*" >&2; exit 1; }
 
 [ -f "$env_file" ] || die "$env_file not found — copy env.example to .env and fill it in"
 
-# Read KEY=VALUE from the compose-style .env. Supports an optional `export`,
-# whitespace around '=', and one pair of matching quotes. Inline comments after
-# a value are not stripped (compose only treats them as comments after space).
+# Read KEY=VALUE from the .env. Supports an optional `export`, whitespace around
+# '=', and one pair of matching quotes.
 env_get() {
 	local key=$1 line value
 	line=$(grep -m1 -E "^[[:space:]]*(export[[:space:]]+)?${key}[[:space:]]*=" "$env_file" || true)
@@ -93,7 +90,7 @@ if configured_gid=$(env_get HERMES_GID) && [ "$configured_gid" != "$gid" ]; then
 fi
 
 tailscale_key=$(require TAILSCALE_AUTHKEY)
-llama_key=$(require LLAMA_API_KEY)
+openrouter_key=$(require OPENROUTER_API_KEY)
 dash_user=$(require DASHBOARD_USERNAME)
 dash_pass=$(require DASHBOARD_PASSWORD)
 
@@ -102,14 +99,11 @@ install -d -m 700 "$out_dir"
 write_env "$out_dir/tailscale.env" \
 	TS_AUTHKEY "$tailscale_key"
 
-write_env "$out_dir/inference.env" \
-	LLAMA_API_KEY "$llama_key"
-
 write_env "$out_dir/hermes-web.env" \
 	HERMES_UID "$uid" \
 	HERMES_GID "$gid" \
 	DASHBOARD_USERNAME "$dash_user" \
 	DASHBOARD_PASSWORD "$dash_pass" \
-	LLAMA_API_KEY "$llama_key"
+	OPENROUTER_API_KEY "$openrouter_key"
 
-printf 'render-quadlet-env: wrote %s/{tailscale,inference,hermes-web}.env (0600)\n' "$out_dir"
+printf 'render-quadlet-env: wrote %s/{tailscale,hermes-web}.env (0600)\n' "$out_dir"

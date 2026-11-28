@@ -6,12 +6,9 @@ Optional. It lets Hermes drive a real browser on the host: Chrome listens for CD
 The **client** is the machine that runs `ssh` and holds the key — inside this stack that is
 `hermes-web`, whose `/opt/data` is `runtime/hermes-home/` on the host.
 
-- **Quadlet (rootless, recommended):** write the config to
-  `runtime/hermes-home/home/.ssh/config`, owned by the host user, mode 0600. It is inside
-  the mounted `HERMES_HOME`, so no extra mount is needed and the container's `hermes` user
-  (UID 1000) can read it.
-- **Compose (Docker):** `ssh_config` at the repo root is bind-mounted to
-  `/root/.ssh/config`; `scripts/prestart.sh` creates it and it must be `root:root`.
+Write the config to `runtime/hermes-home/home/.ssh/config`, owned by the host user,
+mode 0600. It is inside the mounted `HERMES_HOME`, so no extra mount is needed and the
+container's `hermes` user (UID 1000) can read it.
 
 ## 1. Create the key (client)
 
@@ -69,8 +66,6 @@ sudo systemctl reload ssh
 
 ## 5. Write the SSH config (host)
 
-Quadlet:
-
 ```bash
 install -d -m 700 runtime/hermes-home/home/.ssh
 cat > runtime/hermes-home/home/.ssh/config <<'EOF'
@@ -84,13 +79,6 @@ Host <machine>
 	LocalForward 9222 127.0.0.1:9222
 EOF
 chmod 600 runtime/hermes-home/home/.ssh/config
-```
-
-Compose uses the repo-root `ssh_config` instead (same content), then:
-
-```bash
-sudo chown root:root ssh_config
-sudo chmod 600 ssh_config
 ```
 
 ## 6. Start the tunnel (client)

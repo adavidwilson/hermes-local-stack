@@ -1,9 +1,6 @@
 runtime/hermes-home/**
 !runtime/hermes-home/config.yaml
 
-runtime/models/**
-!runtime/models/models.ini
-
 runtime/tailscale-state/
 
 deploy/podman/env/
@@ -11,5 +8,3 @@ deploy/podman/env/
 *.env*
 
 Browser-Profile/
-
-ssh_config

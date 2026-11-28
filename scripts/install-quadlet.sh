@@ -60,16 +60,6 @@ else
 	warn "pasta not found; Podman 6 requires pasta (slirp4netns was removed)"
 fi
 
-groups=$(id -nG)
-case " $groups " in
-	*\ video\ *) ok "user is in group video" ;;
-	*) warn "user is not in group video; /dev/dri/card* may be unreadable" ;;
-esac
-case " $groups " in
-	*\ render\ *) ok "user is in group render" ;;
-	*) warn "user is not in group render; /dev/dri/renderD* will be unreadable" ;;
-esac
-
 if command -v loginctl >/dev/null 2>&1; then
 	linger=$(loginctl show-user "$(id -un)" -p Linger --value 2>/dev/null || true)
 	if [ "$linger" = "yes" ]; then
@@ -81,13 +71,12 @@ fi
 
 # --- Runtime directories --------------------------------------------------
 install -d -m 755 runtime/hermes-home
-install -d -m 755 runtime/models
 install -d -m 700 runtime/tailscale-state
 install -d -m 700 runtime/hermes-home/home/.ssh
 
 uid=$(id -u)
 gid=$(id -g)
-for path in runtime/hermes-home runtime/models runtime/tailscale-state; do
+for path in runtime/hermes-home runtime/tailscale-state; do
 	if [ -e "$path" ] && [ "$(stat -c %u "$path")" != "$uid" ]; then
 		die "$path is owned by uid $(stat -c %u "$path"), not $uid. Fix it as root first:
     sudo chown -R $uid:$gid $path"
@@ -199,20 +188,19 @@ else
 fi
 
 if command -v podman >/dev/null 2>&1; then
-	if podman ps --filter label=io.podman.compose.project --format '{{.Names}}' 2>/dev/null | grep -qE '^(hermes-web|hermes-inference|hermes-tailscale)$'; then
-		warn "a compose stack is running with the same container names; stop it before starting the units"
+	if podman ps --format '{{.Names}}' 2>/dev/null | grep -qE '^(hermes-web|hermes-tailscale)$'; then
+		warn "containers with these names are already running; restart the units to pick up new definitions"
 	fi
 fi
 
 cat <<EOF
 
 Installed. Next:
-  systemctl --user start hermes-web.service      # pulls in tailscale + inference
-  systemctl --user status hermes-web.service hermes-inference.service hermes-tailscale.service
+  systemctl --user start hermes-web.service      # pulls in tailscale
+  systemctl --user status hermes-web.service hermes-tailscale.service
   journalctl --user -u hermes-web.service -n 50
 
-First boot loads the model; hermes-web does not start until inference is healthy
-(Notify=healthy), so allow up to a few minutes.
+hermes-web does not start until tailscale is healthy (Notify=healthy).
 EOF
 
 if $start; then
