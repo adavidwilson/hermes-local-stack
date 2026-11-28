@@ -129,10 +129,10 @@ if [ -n "$generator" ]; then
 	if QUADLET_UNIT_DIRS="$stage" "$generator" --user --dryrun >"$stage/generated.txt" 2>"$stage/generated.err"; then
 		validated=true
 		ok "podman-system-generator accepted the units"
-		grep -q -- '--userns=keep-id' "$stage/generated.txt" \
-			&& ok "hermes-web generates --userns=keep-id" \
-			|| warn "hermes-web generated unit does not show --userns=keep-id"
-		grep -q -- '--user 0' "$stage/generated.txt" \
+		grep -qE -- '--userns(=| )keep-id' "$stage/generated.txt" \
+			&& ok "hermes-web generates keep-id userns" \
+			|| warn "hermes-web generated unit does not show a keep-id userns"
+		grep -qE -- '--user(=| )0' "$stage/generated.txt" \
 			&& ok "hermes-web generates --user 0" \
 			|| warn "hermes-web generated unit does not show --user 0"
 	else

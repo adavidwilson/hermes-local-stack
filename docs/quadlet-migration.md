@@ -172,8 +172,8 @@ health start period; systemd's default 90 s is too short.
 ```ini
 [Unit]
 Description=Hermes web gateway
-Requires=hermes-tailscale.container inference.container
-After=hermes-tailscale.container inference.container
+Requires=hermes-tailscale.container hermes-inference.container
+After=hermes-tailscale.container hermes-inference.container
 PartOf=hermes-tailscale.container
 
 [Container]
@@ -255,7 +255,7 @@ Do not cut over until these hold on the host:
    ```bash
    systemctl --user cat hermes-web.service
    ```
-   The output must show `--userns=keep-id --user 0`, `--network container:...`,
+   The output must show `--userns keep-id --user 0`, `--network container:...`,
    and the generated `After=`/`Requires=` ordering.
 4. Pre-pull all three images (`podman pull ...`) so the first start is not a pull race.
 

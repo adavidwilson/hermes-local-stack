@@ -1,7 +1,7 @@
 [Unit]
 Description=Hermes web gateway (rootless, s6 image)
-Requires=hermes-tailscale.container inference.container
-After=hermes-tailscale.container inference.container
+Requires=hermes-tailscale.container hermes-inference.container
+After=hermes-tailscale.container hermes-inference.container
 # hermes-web shares tailscale's network namespace, so a tailscale restart must
 # recreate this container too.
 PartOf=hermes-tailscale.container

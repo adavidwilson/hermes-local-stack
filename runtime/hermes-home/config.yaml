@@ -39,25 +39,6 @@ provider_routing:
         - siliconflow
         - deepseek
         - novita
-    # /review's model. Per-model routing is read per request from the acting model, so it
-    # applies to the pinned review child too — auxiliary.review cannot carry extra_body.
-    tencent/hy4-flash:
-      order:
-        - fireworks
-        - deepinfra
-      ignore:
-        - tencent
-      data_collection: deny
-providers:
-  llama-cpp:
-    name: llama.cpp
-    base_url: http://inference:8080/v1
-    # Presets live in runtime/models/models.ini; the server's /v1/models lists them.
-    discover_models: true
-    default_model: Qwen3.6-Instruct-General
-    context_length: 262144
-    # compose injects this variable and the inference server requires the same key.
-    key_env: LLAMA_API_KEY
 agent:
   reasoning_effort: medium
   max_turns: 150
@@ -117,20 +98,3 @@ known_builtin_toolsets:
     - x_search
 sessions:
   auto_prune: true
-fallback_providers:
-  - provider: llama-cpp
-    model: Qwen3.6-Instruct-General
-# Side tasks run on the local model to keep main-turn spend down. Omitting `model`
-# resolves to the provider's default_model, so presets are named once, above.
-auxiliary:
-  title_generation:
-    provider: llama-cpp
-  approval:
-    provider: llama-cpp
-  compression:
-    provider: llama-cpp
-  vision:
-    provider: llama-cpp
-  review:
-    provider: openrouter
-    model: tencent/hy4-flash

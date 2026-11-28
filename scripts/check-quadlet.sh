@@ -21,6 +21,16 @@ for f in hermes-stack.network hermes-tailscale.container hermes-inference.contai
 	need "$f" && ok "$f present"
 done
 
+# Every Quadlet reference must resolve to a unit file; the generator aborts
+# with "unable to translate dependency" otherwise (e.g. inference.container
+# vs hermes-inference.container).
+missing_refs=0
+while IFS= read -r ref; do
+	[ -n "$ref" ] || continue
+	[ -f "$units/$ref" ] || { bad "unit references missing $ref"; missing_refs=1; }
+done < <(grep -hoE '[A-Za-z0-9_.-]+\.(container|network)' "$units"/*.container | sort -u)
+[ "$missing_refs" = 0 ] && ok "every referenced container/network unit exists"
+
 # Every container unit must be bootable, named, and use an FQ image reference.
 for f in "$units"/*.container; do
 	name=$(basename "$f")
@@ -110,10 +120,10 @@ if [ -n "$generator" ]; then
 	done
 	if QUADLET_UNIT_DIRS="$stage" "$generator" --user --dryrun >"$stage/out" 2>"$stage/err"; then
 		ok "generator accepted the units"
-		grep -q -- '--userns=keep-id' "$stage/out" \
-			&& ok "generated command has --userns=keep-id" \
-			|| bad "generated command lacks --userns=keep-id"
-		grep -q -- '--user 0' "$stage/out" \
+		grep -qE -- '--userns(=| )keep-id' "$stage/out" \
+			&& ok "generated command has keep-id userns" \
+			|| bad "generated command lacks a keep-id userns"
+		grep -qE -- '--user(=| )0' "$stage/out" \
 			&& ok "generated command has --user 0" \
 			|| bad "generated command lacks --user 0"
 	else
