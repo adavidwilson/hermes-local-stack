@@ -19,9 +19,8 @@ display:
 model:
   default: deepseek/deepseek-v4.1-flash-1017
   provider: openrouter
-  base_url: https://openrouter.ai/api/v1
-  api_mode: chat_completions
 provider_routing:
+  # Keyed by the model slug in model.default above; change one, change both.
   sort: "price"
   data_collection: "deny"
   models:
@@ -40,24 +39,25 @@ provider_routing:
         - siliconflow
         - deepseek
         - novita
+    # /review's model. Per-model routing is read per request from the acting model, so it
+    # applies to the pinned review child too — auxiliary.review cannot carry extra_body.
+    tencent/hy4-flash:
+      order:
+        - fireworks
+        - deepinfra
+      ignore:
+        - tencent
+      data_collection: deny
 providers:
   llama-cpp:
     name: llama.cpp
     base_url: http://inference:8080/v1
-    model: Qwen3.6-Instruct-General
+    # Presets live in runtime/models/models.ini; the server's /v1/models lists them.
     discover_models: true
-    models:
-      Qwen3.6-Instruct-General:
-        context_length: 262144
-      Qwen3.6-Instruct-Reasoning:
-        context_length: 262144
-      Qwen3.6-Thinking-Coding:
-        context_length: 262144
-      Qwen3.6-Thinking-General:
-        context_length: 262144
-    key_env: HERMES_PROVIDER_LLAMA_CPP_A1999FC9_API_KEY
     default_model: Qwen3.6-Instruct-General
     context_length: 262144
+    # compose injects this variable and the inference server requires the same key.
+    key_env: LLAMA_API_KEY
 agent:
   reasoning_effort: medium
   max_turns: 150
@@ -120,48 +120,17 @@ sessions:
 fallback_providers:
   - provider: llama-cpp
     model: Qwen3.6-Instruct-General
+# Side tasks run on the local model to keep main-turn spend down. Omitting `model`
+# resolves to the provider's default_model, so presets are named once, above.
 auxiliary:
   title_generation:
     provider: llama-cpp
-    model: Qwen3.6-Instruct-General
-    extra_body:
-      provider:
-        data_collection: deny
-        ignore:
-          - google-ai-studio
   approval:
     provider: llama-cpp
-    model: Qwen3.6-Instruct-General
-    extra_body:
-      provider:
-        data_collection: deny
-        ignore:
-          - google-ai-studio
   compression:
     provider: llama-cpp
-    model: Qwen3.6-Instruct-General
-    extra_body:
-      provider:
-        data_collection: deny
-        ignore:
-          - google-ai-studio
   vision:
     provider: llama-cpp
-    model: Qwen3.6-Instruct-General
-    extra_body:
-      provider:
-        data_collection: deny
-        ignore:
-          - google-ai-studio
   review:
     provider: openrouter
     model: tencent/hy4-flash
-    extra_body:
-      provider:
-        order:
-          - fireworks
-          - deepinfra
-        allow_fallbacks: true
-        data_collection: deny
-        ignore:
-          - tencent

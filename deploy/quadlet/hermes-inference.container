@@ -1,0 +1,32 @@
+[Unit]
+Description=Hermes local inference (llama.cpp Vulkan, rootless)
+
+[Container]
+ContainerName=hermes-inference
+Image=ghcr.io/ggml-org/llama.cpp:server-vulkan-v1.0.0-b12359-b1b770d
+# compose.yaml overrides the image entrypoint and passes the preset args.
+Entrypoint=/app/llama-server
+Exec=--api-key ${LLAMA_API_KEY} --no-webui --models-preset /models/models.ini
+EnvironmentFile=@REPO@/deploy/podman/env/inference.env
+Volume=@REPO@/runtime/models:/models:ro
+AddDevice=/dev/dri
+# Rootless Podman drops the caller's supplementary groups. Without this the
+# process cannot open /dev/dri/renderD128 (root:render 0660). Requires crun.
+GroupAdd=keep-groups
+Network=hermes-stack.network
+HealthCmd=curl -f localhost:8080/health
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=30
+HealthStartPeriod=90s
+Notify=healthy
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+# The RDNA1 model load plus health start period exceeds systemd's 90s default.
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

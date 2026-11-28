@@ -1,0 +1,30 @@
+[Unit]
+Description=Hermes Tailscale sidecar (rootless)
+
+[Container]
+ContainerName=hermes-tailscale
+HostName=hermes-tailscale
+Image=docker.io/tailscale/tailscale:v1.104.7
+EnvironmentFile=@REPO@/deploy/podman/env/tailscale.env
+Environment=TS_STATE_DIR=/var/lib/tailscale
+# Userspace networking is the image default and the only mode that works
+# rootless without NET_ADMIN or /dev/net/tun. Inbound access is provided by
+# `tailscale serve`, which relays inside tailscaled.
+Environment=TS_USERSPACE=true
+Volume=@REPO@/runtime/tailscale-state:/var/lib/tailscale
+Network=hermes-stack.network
+HealthCmd=tailscale status
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=12
+HealthStartPeriod=30s
+Notify=healthy
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

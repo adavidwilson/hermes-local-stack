@@ -6,6 +6,8 @@ runtime/models/**
 
 runtime/tailscale-state/
 
+deploy/podman/env/
+
 *.env*
 
 Browser-Profile/

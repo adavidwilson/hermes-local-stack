@@ -1,3 +1,9 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "100m"
+    max-file: "3"
+
 services:
   tailscale:
     image: tailscale/tailscale:v1.104.7
@@ -24,11 +30,7 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
-    logging:
-      driver: json-file
-      options:
-        max-size: "100m"
-        max-file: "3"
+    logging: *default-logging
     restart: unless-stopped
   inference:
     # server-vulkan defaults to 0.0.0.0:8080
@@ -51,22 +53,16 @@ services:
       - ./runtime/models:/models:ro
     networks:
       - hermes-stack
-    # TCP check: the server binds :8080 before the model finishes loading, which is
-    # enough for readiness. start_period covers the slow RDNA1 model load.
+    # HTTP /health, not a TCP check: /health is public (no API key) and returns 200
+    # only once the model is loaded, so it tells "up" from "ready" across the slow
+    # RDNA1 load. start_period covers that load.
     healthcheck:
-      # The image already ships CMD [curl -f localhost:8080/health]; reuse it and only retune
-      # timing. /health is public (no API key) and returns 200 only once the model is loaded,
-      # so this tells "up" from "ready" across the slow RDNA1 load.
       test: ["CMD", "curl", "-f", "localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 30
       start_period: 90s
-    logging:
-      driver: json-file
-      options:
-        max-size: "100m"
-        max-file: "3"
+    logging: *default-logging
     restart: unless-stopped
   hermes-web:
     image: nousresearch/hermes-agent:v0.23.3
@@ -82,7 +78,8 @@ services:
     volumes:
       - ./runtime/hermes-home:/opt/data
       - ./ssh_config:/root/.ssh/config
-      - ../Organize:/opt/data/workspace/projects/Organize
+      # Optional extra project dir; override HERMES_EXTRA_WORKSPACE in .env.
+      - ${HERMES_EXTRA_WORKSPACE:-../Organize}:/opt/data/workspace/projects/Organize
     # Gateway API server's public /health (no auth). Requires the API server enabled on :8642.
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS --max-time 3 http://127.0.0.1:8642/health"]
@@ -90,18 +87,15 @@ services:
       timeout: 5s
       retries: 15
       start_period: 30s
-    logging:
-      driver: json-file
-      options:
-        max-size: "100m"
-        max-file: "3"
+    logging: *default-logging
     environment:
       # Run Hermes as the standard non-root user for easy host directory access
-      - HERMES_UID=1000
-      - HERMES_GID=1000
+      - HERMES_UID=${HERMES_UID:-1000}
+      - HERMES_GID=${HERMES_GID:-1000}
       # Auth required for broadcast availability
       - HERMES_DASHBOARD_BASIC_AUTH_USERNAME=${DASHBOARD_USERNAME}
       - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${DASHBOARD_PASSWORD}
+      # Same key the inference server requires; config.yaml names it via key_env.
       - LLAMA_API_KEY=${LLAMA_API_KEY}
     # Needed for tailscale. Upstream documentation example is misleading
     network_mode: service:tailscale

@@ -1,0 +1,3 @@
+[Network]
+# Keep the compose-era name instead of Quadlet's default systemd-hermes-stack.
+NetworkName=hermes-stack

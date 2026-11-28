@@ -1,0 +1,35 @@
+[Unit]
+Description=Hermes web gateway (rootless, s6 image)
+Requires=hermes-tailscale.container inference.container
+After=hermes-tailscale.container inference.container
+# hermes-web shares tailscale's network namespace, so a tailscale restart must
+# recreate this container too.
+PartOf=hermes-tailscale.container
+
+[Container]
+ContainerName=hermes-web
+Image=docker.io/nousresearch/hermes-agent:v0.23.3
+Exec=gateway run
+# keep-id maps host $UID to container 1000, but makes the init process run as
+# $UID; the image's s6 bootstrap must start as root. User=0 overrides only the
+# init UID. This is the pair that fixes the rootless hermes-web startup.
+UserNS=keep-id
+User=0
+EnvironmentFile=@REPO@/deploy/podman/env/hermes-web.env
+Volume=@REPO@/runtime/hermes-home:/opt/data
+Network=hermes-tailscale.container
+HealthCmd=curl -fsS --max-time 3 http://127.0.0.1:8642/health
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=15
+HealthStartPeriod=30s
+Notify=healthy
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target
