@@ -44,8 +44,9 @@ created as `HERMES_UID`/`HERMES_GID` (default 1000); `chown` on the host if your
 
 ## Prerequisites
 
-1. **Podman ≥ 5.4** with a systemd user session, cgroup v2, and `pasta` (Podman 6 requires
-   it). See [Rootless Podman (Quadlet)](#rootless-podman-quadlet).
+1. **Podman ≥ 5.4** with a systemd user session, cgroup v2, **crun**, and `pasta`
+   (Podman 6 requires it). See [Rootless Podman (Quadlet)](#rootless-podman-quadlet).
+   `runc` cannot work here: the rootless `keep-id` container cannot start under it.
 2. A **Tailscale auth key** (`TAILSCALE_AUTHKEY`) from the console — Tailscale runs in the
    `tailscale` container, not on the host.
 3. An **OpenRouter API key** (`OPENROUTER_API_KEY`).

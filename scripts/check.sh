@@ -58,6 +58,11 @@ contains hermes-web.container 'User=0' \
 	&& ok "hermes-web pins User=0 (init as root for s6)" \
 	|| bad "hermes-web sets UserNS=keep-id without User=0 — the image's --user guard will reject startup"
 
+# runc cannot mount sysfs in an unprivileged userns; keep-id needs one.
+contains hermes-web.container 'PodmanArgs=--runtime=crun' \
+	&& ok "hermes-web pins the crun OCI runtime" \
+	|| bad "hermes-web lacks PodmanArgs=--runtime=crun — under runc it fails at container init with 'error mounting sysfs: operation not permitted'"
+
 contains hermes-web.container 'Network=hermes-tailscale.container' \
 	&& ok "hermes-web shares tailscale's network namespace" \
 	|| bad "hermes-web is not sharing the tailscale network namespace"

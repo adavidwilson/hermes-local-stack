@@ -15,6 +15,10 @@ Exec=gateway run
 # init UID. This is the pair that fixes the rootless hermes-web startup.
 UserNS=keep-id
 User=0
+# runc cannot mount sysfs inside an unprivileged user namespace (EPERM at
+# container init); crun bind-mounts the host's /sys instead. keep-id needs a
+# userns, so this unit must not run under runc.
+PodmanArgs=--runtime=crun
 EnvironmentFile=@REPO@/deploy/podman/env/hermes-web.env
 Volume=@REPO@/runtime/hermes-home:/opt/data
 Network=hermes-tailscale.container

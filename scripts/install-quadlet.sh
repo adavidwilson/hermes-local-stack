@@ -50,6 +50,23 @@ elif [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "fa
 fi
 ok "podman is reachable"
 
+# hermes-web pins --runtime=crun: under runc a keep-id user namespace cannot
+# mount sysfs, so the container fails at create with
+# "error mounting \"sysfs\" ... operation not permitted".
+if command -v crun >/dev/null 2>&1; then
+	ok "crun available ($(command -v crun))"
+else
+	die "crun is not installed. The rootless hermes-web unit pins --runtime=crun because
+    runc cannot mount sysfs inside a keep-id user namespace. Install it first
+    (e.g. sudo pacman -S crun) and re-run."
+fi
+default_runtime=$(podman info --format '{{.Host.OCIRuntime.Name}}' 2>/dev/null || true)
+case "$default_runtime" in
+	crun) ok "podman's default OCI runtime is crun" ;;
+	"") warn "podman's default OCI runtime could not be read" ;;
+	*) warn "podman's default OCI runtime is $default_runtime; hermes-web overrides it with crun" ;;
+esac
+
 grep -q "^$(id -un):" /etc/subuid /etc/subgid 2>/dev/null \
 	&& ok "subuid/subgid range exists for $(id -un)" \
 	|| warn "no /etc/subuid + /etc/subgid entry for $(id -un); rootless userns will fail"

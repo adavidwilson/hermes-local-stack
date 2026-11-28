@@ -58,6 +58,7 @@ PartOf=hermes-tailscale.container
 [Container]
 UserNS=keep-id
 User=0
+PodmanArgs=--runtime=crun
 Network=hermes-tailscale.container
 EnvironmentFile=@REPO@/deploy/podman/env/hermes-web.env
 Volume=@REPO@/runtime/hermes-home:/opt/data
@@ -71,8 +72,11 @@ required — `keep-id` alone trips the guard.
 
 `Requires=` + `After=` gate startup on Tailscale becoming healthy. `PartOf=` makes a
 Tailscale restart restart the web container too, because it shares Tailscale's
-network namespace. `@REPO@` is substituted with the absolute repo path by
-`scripts/install-quadlet.sh`.
+network namespace. `PodmanArgs=--runtime=crun` is required: `keep-id` creates an
+unprivileged user namespace, and `runc` cannot mount `sysfs` there — it fails at
+container init with `error mounting "sysfs" ... operation not permitted`. `crun`
+bind-mounts the host's `/sys` instead, so the unit must not run under `runc`. `@REPO@`
+is substituted with the absolute repo path by `scripts/install-quadlet.sh`.
 
 ## Environment files
 
@@ -149,6 +153,12 @@ rsync -a runtime/hermes-home/ runtime/hermes-home-backup-$(date +%Y%m%d%H%M%S)/
 
 - **`[stage2] ERROR: container started with --user 1000`** — `User=0` is missing from
   `hermes-web.container`, or the unit was not re-installed after an edit.
+- **`error mounting "sysfs" ... operation not permitted` at container create** — the
+  container ran under `runc`. `keep-id` needs a userns and `runc` cannot mount sysfs
+  inside one. Install crun (`sudo pacman -S crun` on Arch), confirm
+  `podman info --format '{{.Host.OCIRuntime.Name}}'`, re-run
+  `scripts/install-quadlet.sh`, then restart. The unit already pins
+  `PodmanArgs=--runtime=crun`; if it still happens, crun is missing or broken.
 - **Files in `runtime/hermes-home` owned by a subuid** — `HERMES_UID` in the rendered
   `hermes-web.env` differs from the host UID; re-run the env renderer.
 - **Container unreachable on the tailnet** — `podman exec hermes-web tailscale serve status`
