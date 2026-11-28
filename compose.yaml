@@ -72,6 +72,7 @@ services:
     image: nousresearch/hermes-agent:v0.23.3
     container_name: hermes-web
     command: ["gateway", "run"]
+    userns_mode: keep-id
     restart: unless-stopped
     depends_on:
       inference:
@@ -81,6 +82,7 @@ services:
     volumes:
       - ./runtime/hermes-home:/opt/data
       - ./ssh_config:/root/.ssh/config
+      - ../Organize:/opt/data/workspace/projects/Organize
     # Gateway API server's public /health (no auth). Requires the API server enabled on :8642.
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS --max-time 3 http://127.0.0.1:8642/health"]

@@ -17,24 +17,46 @@ display:
   in_app_tours: false
   in_app_tips: false
 model:
-  default: Tiel-Coding
-  provider: llama-cpp
-  base_url: http://inference:8080/v1
+  default: deepseek/deepseek-v4.1-flash-1017
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
   api_mode: chat_completions
-  key_env: LLAMA_API_KEY
+provider_routing:
+  sort: "price"
+  data_collection: "deny"
+  models:
+    deepseek/deepseek-v4.1-flash-1017:
+      order:
+        - tenstorrent
+        - pearl-research
+        - cloudflare
+      ignore:
+        - ambient
+        - pareto-inference
+        - streamlake
+        - alibaba
+        - cohere
+        - baidu
+        - siliconflow
+        - deepseek
+        - novita
 providers:
   llama-cpp:
     name: llama.cpp
     base_url: http://inference:8080/v1
-    model: Tiel-Coding
+    model: Qwen3.6-Instruct-General
     discover_models: true
     models:
-      Tiel-Coding:
+      Qwen3.6-Instruct-General:
         context_length: 262144
-      Tiel-Default:
+      Qwen3.6-Instruct-Reasoning:
         context_length: 262144
-    key_env: LLAMA_API_KEY
-    default_model: Tiel-Coding
+      Qwen3.6-Thinking-Coding:
+        context_length: 262144
+      Qwen3.6-Thinking-General:
+        context_length: 262144
+    key_env: HERMES_PROVIDER_LLAMA_CPP_A1999FC9_API_KEY
+    default_model: Qwen3.6-Instruct-General
     context_length: 262144
 agent:
   reasoning_effort: medium
@@ -93,3 +115,53 @@ known_builtin_toolsets:
     - vision
     - web
     - x_search
+sessions:
+  auto_prune: true
+fallback_providers:
+  - provider: llama-cpp
+    model: Qwen3.6-Instruct-General
+auxiliary:
+  title_generation:
+    provider: llama-cpp
+    model: Qwen3.6-Instruct-General
+    extra_body:
+      provider:
+        data_collection: deny
+        ignore:
+          - google-ai-studio
+  approval:
+    provider: llama-cpp
+    model: Qwen3.6-Instruct-General
+    extra_body:
+      provider:
+        data_collection: deny
+        ignore:
+          - google-ai-studio
+  compression:
+    provider: llama-cpp
+    model: Qwen3.6-Instruct-General
+    extra_body:
+      provider:
+        data_collection: deny
+        ignore:
+          - google-ai-studio
+  vision:
+    provider: llama-cpp
+    model: Qwen3.6-Instruct-General
+    extra_body:
+      provider:
+        data_collection: deny
+        ignore:
+          - google-ai-studio
+  review:
+    provider: openrouter
+    model: tencent/hy4-flash
+    extra_body:
+      provider:
+        order:
+          - fireworks
+          - deepinfra
+        allow_fallbacks: true
+        data_collection: deny
+        ignore:
+          - tencent
